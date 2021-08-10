@@ -1,0 +1,37 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions", "selectRelationCount"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
+  name     String?
+  bookings Booking[]
+}
+
+model Screening {
+  id               Int       @id @default(autoincrement())
+  imdbId           String    @unique
+  movieName        String
+  movieYear        DateTime  @db.Date
+  synopsis         String?
+  startTime        DateTime
+  // The number of seats/tickets for sale
+  ticketLimit      Int
+  bookings         Booking[]
+}
+
+model Booking {
+  id               Int       @id @default(autoincrement())
+  paymentConfirmed Boolean   @default(false)
+  user             User      @relation(fields: [userId], references: [id])
+  userId           Int
+  screening        Screening @relation(fields: [screeningId], references: [id])
+  screeningId      Int
+}
