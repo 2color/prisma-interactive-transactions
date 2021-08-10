@@ -45,6 +45,7 @@ async function main() {
   })
   console.log(users)
 
+
   const screenings = await prisma.screening.createMany({
     data: screeningData,
   })

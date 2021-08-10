@@ -9,22 +9,23 @@ datasource db {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  email    String    @unique
-  name     String?
-  bookings Booking[]
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  name          String?
+  bookings      Booking[]
+  notifications Notification[]
 }
 
 model Screening {
-  id               Int       @id @default(autoincrement())
-  imdbId           String    @unique
-  movieName        String
-  movieYear        DateTime  @db.Date
-  synopsis         String?
-  startTime        DateTime
+  id          Int       @id @default(autoincrement())
+  imdbId      String    @unique
+  movieName   String
+  movieYear   DateTime  @db.Date
+  synopsis    String?
+  startTime   DateTime
   // The number of seats/tickets for sale
-  ticketLimit      Int
-  bookings         Booking[]
+  ticketLimit Int
+  bookings    Booking[]
 }
 
 model Booking {
@@ -34,4 +35,12 @@ model Booking {
   userId           Int
   screening        Screening @relation(fields: [screeningId], references: [id])
   screeningId      Int
+}
+
+model Notification {
+  id      Int     @id @default(autoincrement())
+  message String
+  sent    Boolean @default(false)
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int
 }

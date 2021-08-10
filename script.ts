@@ -4,19 +4,17 @@ const prisma = new PrismaClient()
 
 // A `main` function so that we can use async/await
 async function main() {
-  const bookings = await Promise.allSettled([
-    createBooking('nilu@prisma.io', '9606374'),
-    createBooking('etel@prisma.io', '9606374'),
-    createBooking('daniel@prisma.io', '9606374'),
-  ])
-  console.dir(bookings)
+  const booking1 = await createBooking('nilu@prisma.io', '9606374')
+  console.log(booking1)
+  const booking2 = await createBooking('etel@prisma.io', '9606374')
+  console.log(booking2)
+  const booking3 = await createBooking('daniel@prisma.io', '9606374')
+  console.log(booking3)
 }
 
 async function createBooking(email: string, imdbId: string) {
+  // Transaction to book a ticket if there's seats available
   return await prisma.$transaction(async (prisma) => {
-    // Question: if a screening is updated at this point by another transaction, will the changes be visible?
-
-    // Transaction to book a ticket if there's seats available
     const screening = await prisma.screening.findUnique({
       where: {
         imdbId,
@@ -31,17 +29,15 @@ async function createBooking(email: string, imdbId: string) {
       throw new Error('screening not found')
     }
 
-    console.log('ticketLimit:\t', screening.ticketLimit)
-    console.log('bookings:\t', screening?._count?.bookings)
-
     if (
       screening._count &&
-      screening?._count.bookings >= screening.ticketLimit
+      screening._count.bookings >= screening.ticketLimit
     ) {
       throw new Error('Screening booked out')
     }
 
-    return await prisma.booking.create({
+    // Create the booking
+    const booking = await prisma.booking.create({
       data: {
         screening: {
           connect: {
@@ -56,6 +52,7 @@ async function createBooking(email: string, imdbId: string) {
       },
       include: {
         screening: {
+          // Create the booking
           select: {
             movieName: true,
             imdbId: true,
@@ -63,6 +60,19 @@ async function createBooking(email: string, imdbId: string) {
         },
       },
     })
+
+    const notification = await prisma.notification.create({
+      data: {
+        message: `Your booking for ${booking.screening.movieName} is confirmed. Booking id: ${booking.id}}`,
+        user: {
+          connect: {
+            email: email,
+          },
+        },
+      },
+    })
+
+    return [booking, notification]
   })
 }
 
